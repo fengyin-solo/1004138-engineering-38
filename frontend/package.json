@@ -4,11 +4,18 @@
   "version": "1.0.0",
   "type": "module",
   "repoKind": "frontend-only",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
+    "predeps": "node scripts/check-deps.cjs",
+    "predev": "node scripts/check-deps.cjs",
     "dev": "vite",
-    "build": "vue-tsc --noEmit && vite build",
+    "prebuild": "node scripts/check-deps.cjs",
+    "build": "vue-tsc --noEmit && vite build && node scripts/verify-build.cjs",
     "preview": "vite preview",
-    "typecheck": "vue-tsc --noEmit"
+    "typecheck": "vue-tsc --noEmit",
+    "test:store": "node scripts/test-migration.mjs"
   },
   "dependencies": {
     "pinia": "^2.1.7",

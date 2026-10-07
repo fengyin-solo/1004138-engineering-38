@@ -1,5 +1,10 @@
 services:
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      args:
+        # 默认值与 frontend/.env.production 保持一致，部署时在此覆盖。
+        VITE_APP_NAME: "机场地面保障调度管理系统"
+        VITE_API_BASE: ""
     ports:
-      - "5173:5173"
+      - "8080:80"

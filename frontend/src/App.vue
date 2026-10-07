@@ -1,7 +1,7 @@
 <template>
   <div class="app-shell">
     <aside class="app-side">
-      <h1 class="app-title">机场地面保障调度管理系统</h1>
+      <h1 class="app-title">{{ APP_NAME }}</h1>
       <nav class="nav-list">
         <RouterLink v-for="item in navItems" :key="item.path" :to="item.path" class="nav-item">
           {{ item.label }}
@@ -20,6 +20,7 @@
 
 <script setup lang="ts">
 import { useSessionStore } from '@/stores/session'
+import { APP_NAME } from '@/config'
 
 const store = useSessionStore()
 

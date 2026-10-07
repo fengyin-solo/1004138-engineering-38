@@ -24,6 +24,20 @@
       </span>
     </p>
 
+    <!-- 货物装卸台账等其它入口读的是同一份可用状态，这里先给出口径。 -->
+    <div class="equip-sync-bar">
+      <span>货物装卸可用设备：</span>
+      <RouterLink
+        v-for="item in availableEquip"
+        :key="item.id"
+        class="equip-chip"
+        :class="{ unavailable: !item.available }"
+        :to="`/load_equip/${item.id}`"
+      >
+        {{ item.code }} · {{ item.status }}{{ item.available ? '（可用）' : '（不可用）' }}
+      </RouterLink>
+    </div>
+
     <form class="filter-bar" @submit.prevent="reload">
       <label v-for="field in filterFields" :key="field" class="filter-item">
         <span>{{ field }}</span>
@@ -43,7 +57,12 @@
       </thead>
       <tbody>
         <tr v-for="row in rows" :key="String(row.id)">
-          <td v-for="column in columns" :key="column">{{ row[column] ?? '—' }}</td>
+          <td v-for="column in columns" :key="column">
+            <RouterLink v-if="column === '设备编号'" class="link" :to="`/load_equip/${row.id}`">
+              {{ row[column] ?? '—' }}
+            </RouterLink>
+            <template v-else>{{ row[column] ?? '—' }}</template>
+          </td>
           <td>{{ row.status }}</td>
           <td class="row-actions">
             <button
@@ -75,6 +94,7 @@ import { computed, onMounted, ref } from 'vue'
 
 import {
   downloadEntries,
+  equipmentAvailabilityList,
   listEntries,
   moduleMeta,
   runAction as applyAction,
@@ -82,22 +102,34 @@ import {
 import type { EntryRow } from '@/data/types'
 
 const meta = moduleMeta('load_equip')
-const columns = ["设备编号", "设备类型", "适用机型", "最大载重", "安装位置", "购入日期", "维保记录", "设备状态"]
-const actions = ["启用设备", "安排维保", "申请报修"]
-const statuses = ["待机", "运行中", "维保中", "已报修"]
-const stats = [{"label": "运行中设备", "value": 0}, {"label": "维保中设备", "value": 0}, {"label": "报修设备", "value": 0}]
+const columns = meta.fields
+const actions = meta.actions
+const statuses = meta.statuses
 
 const rows = ref<EntryRow[]>([])
 const total = ref(0)
 const errorMessage = ref('')
 const filters = ref<Record<string, string>>({})
 const filterFields = columns.slice(0, 3)
+
 const statusSummary = computed(() =>
   statuses.map((status: string) => ({
     status,
     count: rows.value.filter((row) => String(row.status) === status).length,
   })),
 )
+
+const availableEquip = computed(() => equipmentAvailabilityList())
+
+const stats = computed(() => [
+  { label: '运行中设备', value: countByStatus('运行中') },
+  { label: '维保中设备', value: countByStatus('维保中') },
+  { label: '报修设备', value: countByStatus('已报修') },
+])
+
+function countByStatus(status: string): number {
+  return rows.value.filter((row) => String(row.status) === status).length
+}
 
 function resetFilters() {
   filters.value = {}

@@ -35,3 +35,14 @@ body { margin: 0; background: #f6f8fb; color: #1f2937; }
 .error-text { color: #b42318; }
 .status-legend { display: flex; flex-wrap: wrap; gap: 12px; margin: 0 0 10px; font-size: 12px; color: var(--muted); }
 .legend-item { background: #eef2f7; border-radius: 999px; padding: 2px 10px; }
+.equip-sync-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; margin-bottom: 12px; font-size: 12px; color: var(--muted); }
+.equip-chip { border: 1px solid #b7d4b0; background: #f1f8ef; color: #276221; border-radius: 999px; padding: 2px 10px; text-decoration: none; }
+.equip-chip.unavailable { border-color: #e5b8b3; background: #fdf2f1; color: #b42318; }
+.detail-table { max-width: 720px; margin-bottom: 12px; }
+.detail-table th { width: 140px; background: #f8fafc; color: var(--muted); }
+.maintenance-list { margin: 0; padding-left: 18px; }
+.maintenance-list li { margin-bottom: 2px; }
+.detail-actions { display: flex; gap: 8px; }
+.ok-text { color: #276221; }
+.warn-text { color: #b54708; }
+.error-text { color: #b42318; }

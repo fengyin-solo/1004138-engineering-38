@@ -24,6 +24,21 @@
       </span>
     </p>
 
+    <!-- 装卸设备可用状态：直接读装卸设备模块的同一数据源，状态流转后这里立即同步。 -->
+    <div class="equip-sync-bar">
+      <span>装卸设备可用情况（{{ availableCount }}/{{ equipList.length }} 可调度）：</span>
+      <RouterLink
+        v-for="item in equipList"
+        :key="item.id"
+        class="equip-chip"
+        :class="{ unavailable: !item.available }"
+        :to="`/load_equip/${item.id}`"
+      >
+        {{ item.code }} · {{ item.type }} · {{ item.aircraft }} ·
+        {{ item.status }}{{ item.available ? '（可用）' : '（不可用）' }}
+      </RouterLink>
+    </div>
+
     <form class="filter-bar" @submit.prevent="reload">
       <label v-for="field in filterFields" :key="field" class="filter-item">
         <span>{{ field }}</span>
@@ -75,6 +90,7 @@ import { computed, onMounted, ref } from 'vue'
 
 import {
   downloadEntries,
+  equipmentAvailabilityList,
   listEntries,
   moduleMeta,
   runAction as applyAction,
@@ -86,6 +102,9 @@ const columns = ["装卸编号", "关联航班", "货物品类", "件数吨位",
 const actions = ["开始装卸", "确认完成", "标记中断"]
 const statuses = ["待装卸", "装卸中", "已完成", "异常中断"]
 const stats = [{"label": "待装卸航班", "value": 0}, {"label": "装卸中航班", "value": 0}, {"label": "异常中断航班", "value": 0}]
+
+const equipList = computed(() => equipmentAvailabilityList())
+const availableCount = computed(() => equipList.value.filter((item) => item.available).length)
 
 const rows = ref<EntryRow[]>([])
 const total = ref(0)

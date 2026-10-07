@@ -27,6 +27,13 @@ export type PageResult = {
   size: number
 }
 
+// 浏览器本地库的落盘结构：版本号 + 分模块记录。
+// 版本号用于识别旧示例数据并做迁移；升级只会补齐字段、对齐状态，不覆盖用户改动。
+export type DataEnvelope = {
+  version: number
+  rows: Record<string, EntryRow[]>
+}
+
 export type ActionResult = {
   ok: boolean
   message: string

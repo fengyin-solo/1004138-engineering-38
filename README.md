@@ -7,6 +7,12 @@
 结果都持久化在浏览器 `localStorage` 里，刷新或重开浏览器都还在。dev server 已关掉自动打开页面，
 启动后按终端打印的地址手工打开。
 
+本地数据层带版本号（`SCHEMA_VERSION`）：示例数据扩字段（例如装卸设备的「适用机型」）后发布，
+旧浏览器打开时会做一次**幂等迁移**——按设备编号对齐，只补齐缺失字段、对齐镜像状态字段
+（「设备状态」始终与主状态 `status` 同源），用户改过的字段与历史维保记录保留，重复记录自动
+去重；迁移前旧数据会备份到 `airport-ground-handling:entries:backup`。迁移是纯计算后统一落盘，
+中途失败不会破坏旧数据，下次打开从断点重新迁移，结果一致。
+
 ## 目录结构
 
 ```text
@@ -29,6 +35,9 @@ npm install
 npm run dev
 ```
 
+`npm run dev` / `npm run build` 会先执行 `scripts/check-deps.cjs`：缺少依赖或 Node 版本过低时
+直接打印缺失项与 `npm install` 提示，不会抛出难懂的模块解析错误；装好依赖后从该步继续即可。
+
 前端默认监听 `http://127.0.0.1:5173/`，dev server 不会自动打开浏览器，需要自己访问。
 
 生产构建：
@@ -37,6 +46,35 @@ npm run dev
 cd frontend
 npm run build
 ```
+
+构建链路为「依赖检查 → `vue-tsc` 类型检查 → `vite build` → `scripts/verify-build.cjs` 产物校验」，
+任一步失败即非零退出，不会把坏产物发布出去。本地数据层迁移逻辑可用 `npm run test:store` 验证。
+
+### 环境配置（dev / build / docker 统一）
+
+环境变量统一在 `frontend/src/config/index.ts` 读取（带兜底默认值），页面不直接散落
+`import.meta.env`：
+
+| 文件 | 何时加载 |
+| --- | --- |
+| `frontend/.env.development` | `npm run dev` |
+| `frontend/.env.production` | `npm run build`、docker 镜像构建 |
+| `frontend/.env.local` | 本地覆盖（已 gitignore） |
+| `.env.example` | 变量说明，可复制为 `.env.local` |
+
+变量：`VITE_APP_NAME`（页面标题/侧边栏）、`VITE_API_BASE`（纯前端默认留空）。
+
+### Docker 部署
+
+`frontend/Dockerfile` 是多阶段构建：Node 阶段装依赖并执行完整 `npm run build`，nginx 阶段只托管
+`dist`，并把刷新深层路由回退到 `index.html`。
+
+```bash
+docker compose up --build      # 本机访问 http://localhost:8080
+```
+
+需要在构建期注入环境变量时，改 `docker-compose.yml` 的 `build.args`（`VITE_APP_NAME` /
+`VITE_API_BASE`）即可，三个环境取值口径一致，不会再出现「本地能显示、构建后丢失」。
 
 ## 业务模块
 
@@ -68,4 +106,7 @@ npm run build
 - 字段、状态、动作与流转目标集中在 `frontend/src/data/modules.ts`；示例数据在
   `frontend/src/data/seed.ts`。
 - 状态流转只允许在 `local-service.ts` 里改，页面组件不做业务判断。
+- 装卸设备详情页在 `views/load_equip/detail.vue`（路由 `/load_equip/:id`），与清单读同一份本地库；
+  货物装卸台账（`views/cargo/index.vue`）通过 `equipmentAvailabilityList()` 读取装卸设备的可用状态，
+  其它入口需要设备状态时也统一走这个函数，避免多处各写一份状态判断。
 - 想回到初始数据：清掉浏览器里 `airport-ground-handling:entries` 这一项，或调用 `resetModule(模块)`。
