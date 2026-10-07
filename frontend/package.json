@@ -6,9 +6,14 @@
   "repoKind": "frontend-only",
   "scripts": {
     "dev": "vite",
-    "build": "vue-tsc --noEmit && vite build",
+    "prebuild": "node scripts/prebuild-check.cjs",
+    "build": "npm run prebuild && vue-tsc --noEmit && vite build",
     "preview": "vite preview",
-    "typecheck": "vue-tsc --noEmit"
+    "typecheck": "vue-tsc --noEmit",
+    "test:init": "node scripts/test-init.mjs",
+    "test:store": "node scripts/test-store.mjs",
+    "test": "npm run test:init && npm run test:store",
+    "predeploy:check": "node scripts/prebuild-check.cjs"
   },
   "dependencies": {
     "pinia": "^2.1.7",

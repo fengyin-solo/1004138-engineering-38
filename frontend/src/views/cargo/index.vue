@@ -67,6 +67,35 @@
       <span>共 {{ total }} 条货物装卸记录</span>
       <span v-if="errorMessage" class="error-text">{{ errorMessage }}</span>
     </footer>
+
+    <section class="equipment-ledger">
+      <header class="ledger-head">
+        <h3>装卸设备可用台账</h3>
+        <span class="page-desc">状态直接读取装卸设备模块：可用 {{ availableCount }} / {{ equipment.length }} 台，维保中或已报修的设备不可排班。</span>
+      </header>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>设备编号</th>
+            <th>设备类型</th>
+            <th>适用机型</th>
+            <th>设备当前状态</th>
+            <th>可用状态</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="item in equipment" :key="item.id">
+            <td>
+              <RouterLink class="link" :to="`/load_equip/${item.id}`">{{ item.设备编号 }}</RouterLink>
+            </td>
+            <td>{{ item.设备类型 }}</td>
+            <td>{{ item.适用机型 }}</td>
+            <td>{{ item.status }}</td>
+            <td :class="item.available ? 'text-ok' : 'text-warn'">{{ item.设备状态 }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
   </section>
 </template>
 
@@ -76,10 +105,12 @@ import { computed, onMounted, ref } from 'vue'
 import {
   downloadEntries,
   listEntries,
+  listEquipmentAvailability,
   moduleMeta,
   runAction as applyAction,
 } from '@/api/local-service'
 import type { EntryRow } from '@/data/types'
+import type { EquipmentAvailability } from '@/api/local-service'
 
 const meta = moduleMeta('cargo')
 const columns = ["装卸编号", "关联航班", "货物品类", "件数吨位", "装卸班组", "计划开始", "实际完成", "装卸状态"]
@@ -92,6 +123,8 @@ const total = ref(0)
 const errorMessage = ref('')
 const filters = ref<Record<string, string>>({})
 const filterFields = columns.slice(0, 3)
+const equipment = ref<EquipmentAvailability[]>([])
+const availableCount = computed(() => equipment.value.filter((item) => item.available).length)
 const statusSummary = computed(() =>
   statuses.map((status: string) => ({
     status,
@@ -128,6 +161,7 @@ function reload() {
     const payload = listEntries(meta.key, filters.value)
     rows.value = payload.items
     total.value = payload.total
+    equipment.value = listEquipmentAvailability()
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : '货物装卸列表读取失败'
   }
@@ -135,3 +169,11 @@ function reload() {
 
 onMounted(reload)
 </script>
+
+<style scoped>
+.equipment-ledger { margin-top: 20px; }
+.ledger-head { margin-bottom: 8px; }
+.ledger-head h3 { margin: 0 0 2px; font-size: 15px; }
+.text-ok { color: #15803d; }
+.text-warn { color: #b45309; }
+</style>

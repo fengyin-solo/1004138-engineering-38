@@ -7,6 +7,32 @@
 结果都持久化在浏览器 `localStorage` 里，刷新或重开浏览器都还在。dev server 已关掉自动打开页面，
 启动后按终端打印的地址手工打开。
 
+### 本地数据库初始化（版本化、幂等、可断点续做）
+
+- 数据键 `airport-ground-handling:entries`，版本键 `airport-ground-handling:meta`（记录 schema 版本）。
+- 初始化逻辑集中在 `src/data/migration.ts`：启动时按版本号顺序执行迁移，每个迁移幂等；
+  先落数据再落版本号，中途失败下次自动从断点版本续做，重复初始化**不产生重复记录**。
+- 合并种子按 `id` 对齐：只补缺字段、补齐新示例，用户改过的字段与自增记录保留；
+  装卸设备的历史「维保记录」属于用户资产，任何升级/重置都不会被示例覆盖。
+- 装卸设备的「设备状态」（可用/不可用）统一由当前状态派生：待机、运行中为可用，维保中、已报修为不可用。
+  设备详情页与货物装卸页的「装卸设备可用台账」读的是同一份结论，状态流转后各入口同步生效。
+- 本地数据损坏时不静默吞掉：旧内容备份为 `entries.corrupt-<时间戳>` 后重新播种。
+- 想回到初始数据：调用 `resetModule(模块)`（保留历史维保），或清掉浏览器里的数据键完全重置。
+
+## 环境配置
+
+- `frontend/.env`：所有环境共享的默认值（入库）。
+- `frontend/.env.development` / `frontend/.env.production`：dev / build 各自覆盖（入库）。
+- `frontend/.env.local`：个人覆盖，不入库（参考根目录 `.env.example`）。
+- 变量：`VITE_APP_NAME`（应用名/页面标题）、`VITE_APP_ENV`（环境标识）、`VITE_API_BASE`（预留，切回后端时使用）。
+
+## 构建校验
+
+`npm run build` 会先执行 `scripts/prebuild-check.cjs`：校验 Node ≥ 18、依赖完整性、
+rollup 平台原生包（跨平台拷贝 `node_modules` 时常见的 `Cannot find module
+@rollup/rollup-linux-*` 缺失）。缺依赖时会明确打印缺了什么并自动 `npm install`，
+修复后重跑即可从断点续做。初始化逻辑的断点校验：`npm test`。
+
 ## 目录结构
 
 ```text
@@ -36,6 +62,13 @@ npm run dev
 ```bash
 cd frontend
 npm run build
+```
+
+容器化部署（多阶段构建，nginx 托管静态产物，history 路由刷新不 404）：
+
+```bash
+make deploy        # 等价于 docker compose up --build -d
+# 访问 http://localhost:8080/
 ```
 
 ## 业务模块

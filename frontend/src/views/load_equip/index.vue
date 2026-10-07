@@ -43,9 +43,13 @@
       </thead>
       <tbody>
         <tr v-for="row in rows" :key="String(row.id)">
-          <td v-for="column in columns" :key="column">{{ row[column] ?? '—' }}</td>
+          <td>
+            <RouterLink class="link" :to="`/load_equip/${row.id}`">{{ row['设备编号'] }}</RouterLink>
+          </td>
+          <td v-for="column in columns.slice(1)" :key="column">{{ row[column] ?? '—' }}</td>
           <td>{{ row.status }}</td>
           <td class="row-actions">
+            <RouterLink class="link" :to="`/load_equip/${row.id}`">详情</RouterLink>
             <button
               v-for="action in actions"
               :key="action"
@@ -74,6 +78,7 @@
 import { computed, onMounted, ref } from 'vue'
 
 import {
+  availableEquipmentCount,
   downloadEntries,
   listEntries,
   moduleMeta,
@@ -85,7 +90,11 @@ const meta = moduleMeta('load_equip')
 const columns = ["设备编号", "设备类型", "适用机型", "最大载重", "安装位置", "购入日期", "维保记录", "设备状态"]
 const actions = ["启用设备", "安排维保", "申请报修"]
 const statuses = ["待机", "运行中", "维保中", "已报修"]
-const stats = [{"label": "运行中设备", "value": 0}, {"label": "维保中设备", "value": 0}, {"label": "报修设备", "value": 0}]
+const stats = computed(() => [
+  { label: "运行中设备", value: rows.value.filter((row) => String(row.status) === '运行中').length },
+  { label: "维保中设备", value: rows.value.filter((row) => String(row.status) === '维保中').length },
+  { label: "可用设备（待机+运行中）", value: availableEquipmentCount() },
+])
 
 const rows = ref<EntryRow[]>([])
 const total = ref(0)

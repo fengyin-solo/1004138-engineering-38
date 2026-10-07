@@ -59,6 +59,10 @@ pnpm-debug.log*
 .env.*.local
 *.env
 !.env.example
+# frontend 下的 .env / .env.development / .env.production 是入库的统一默认配置
+!frontend/.env
+!frontend/.env.development
+!frontend/.env.production
 
 # ===== 测试覆盖率 =====
 coverage/

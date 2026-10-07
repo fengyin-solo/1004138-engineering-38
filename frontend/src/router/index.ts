@@ -18,6 +18,7 @@ const FlightOps = () => import('@/views/flight_ops/index.vue')
 const Turnaround = () => import('@/views/turnaround/index.vue')
 const ApronSafety = () => import('@/views/apron_safety/index.vue')
 const LoadEquip = () => import('@/views/load_equip/index.vue')
+const LoadEquipDetail = () => import('@/views/load_equip/detail.vue')
 const AirEmergency = () => import('@/views/air_emergency/index.vue')
 
 const router = createRouter({
@@ -41,6 +42,7 @@ const router = createRouter({
     { path: '/turnaround', name: 'turnaround', component: Turnaround },
     { path: '/apron_safety', name: 'apron_safety', component: ApronSafety },
     { path: '/load_equip', name: 'load_equip', component: LoadEquip },
+    { path: '/load_equip/:id', name: 'load_equip_detail', component: LoadEquipDetail },
     { path: '/air_emergency', name: 'air_emergency', component: AirEmergency },
   ],
 })

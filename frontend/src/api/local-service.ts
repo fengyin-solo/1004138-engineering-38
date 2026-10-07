@@ -1,5 +1,6 @@
 import { MODULE_BY_KEY } from '@/data/modules'
-import { allRows, listRows, resetRows, saveRows } from '@/data/local-store'
+import { allRows, getRow, listRows, resetRows, saveRows } from '@/data/local-store'
+import { equipmentStatusLabel, isEquipmentAvailable } from '@/data/migration'
 import type { ActionResult, EntryRow, ModuleMeta, OverviewResult, PageResult } from '@/data/types'
 
 // 会写进数据的「往回走」动作：命中就把这条记录标成异常态，看板上能一眼看出来。
@@ -50,10 +51,47 @@ export function runAction(key: string, id: number, action: string): ActionResult
     pending: target !== lastStatus,
     abnormal: NEGATIVE_ACTIONS.some((verb) => action.startsWith(verb)),
   }
+  // 装卸设备：状态一变，设备状态（可用/不可用）立即随动，其他入口的台账同步生效
+  if (key === 'load_equip') {
+    updated['设备状态'] = equipmentStatusLabel(updated)
+  }
   const next = [...rows]
   next[index] = updated
   saveRows(key, next)
   return { ok: true, message: `${meta.entity}已${action}，当前状态「${target}」` }
+}
+
+export function entryDetail(key: string, id: number): EntryRow | undefined {
+  moduleMeta(key)
+  return getRow(key, id)
+}
+
+export type EquipmentAvailability = {
+  id: number
+  设备编号: string
+  设备类型: string
+  适用机型: string
+  status: string
+  available: boolean
+  设备状态: string
+}
+
+// 货物装卸台账等其他入口统一从这里读取装卸设备的可用状态，
+// 结论直接由装卸设备当前状态派生，避免各入口各写一份判断。
+export function listEquipmentAvailability(): EquipmentAvailability[] {
+  return listRows('load_equip').map((row) => ({
+    id: Number(row.id),
+    设备编号: String(row['设备编号'] ?? ''),
+    设备类型: String(row['设备类型'] ?? ''),
+    适用机型: String(row['适用机型'] ?? ''),
+    status: String(row.status),
+    available: isEquipmentAvailable(row),
+    设备状态: equipmentStatusLabel(row),
+  }))
+}
+
+export function availableEquipmentCount(): number {
+  return listEquipmentAvailability().filter((item) => item.available).length
 }
 
 export function resetModule(key: string): PageResult {
